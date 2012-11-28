@@ -53,7 +53,6 @@ int main (int argc, char *argv[])
             break;
         }
         division_by_subtraction(num, div);
-        division_faster(num, div);
         /* recursion result - hmm we lose the remainder 
            we can retrieve it but it is trivial excercise */
         recursion_result = divide_recursion(num, div);
