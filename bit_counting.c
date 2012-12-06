@@ -27,7 +27,14 @@
  *                                   0000 (0)
  *
  *     bit_count = 3
- *              
+ * 
+ *     E.g 8 (1000)
+ *     1st pass v = 1000 & 0111  = 0 bit_count = 1
+ *
+ *     E.g 6 (0110)
+ *     1st pass v = 0110 & 0101  = 0100 bit_count = 1
+ *     2nd pass v = 0100 & 0011  = 0000 bit_count = 2
+ *          
  */
 
 unsigned int
