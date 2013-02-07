@@ -78,31 +78,18 @@ class testbed_config (utng.test_suite_t):
         self.std_wait_time = 10
 
 
-class metadata_nbar (testbed_config):
-    # Required config for the test suite
-    "Metadata NBAR Regression"
-
-    #wait for the Interfaces to be UP
-    required_prerequisites = pre.prerequisite_t([
-        pre.interface_up_pred_t(routers['iol-pagent1'], routers['iol-pagent1'].netifs['link_p1_i1']),
-        pre.interface_up_pred_t(routers['iol1'], routers['iol1'].netifs['link_p1_i1']),
-        pre.interface_up_pred_t(routers['iol1'], routers['iol1'].netifs['link1_2']),
-        pre.interface_up_pred_t(routers['iol2'], routers['iol2'].netifs['link1_2'])
-        ], 30)
-
-
     def check_metadata_on_routers (rtrs, check):
         """ This function returns the predicate to check if metadata is enabled"""
-
+ 
         print  "############################################"
         print  "#      Check Metadata enabled on UUTs      #"
         print  "############################################"
-
+ 
         # Check that metadata is not listed under <show ?>
         if not (type(rtrs) == list):
-            rtrs = [rtrs]
-
-        preq_metadata = []
+            rtrs = [rtrs] 
+ 
+        preq_metadata = [] 
         for router in rtrs:
             preq_metadata.append(metadata.check_command_opt_pred_t(routers[router],
                                                                    'show',
@@ -111,7 +98,7 @@ class metadata_nbar (testbed_config):
                                  self.std_wait_time)
         return preq_metadata
 
-    def enable_metata_on_routers (rtrs)
+    def enable_metata_on_routers (rtrs):
         """This function enables metadata on UUTs"""
 
         print  "############################################"
@@ -126,12 +113,11 @@ class metadata_nbar (testbed_config):
             # Enable metadata
             topology.config_topology({routers[router]:'metadata flow'})
             topology.config_topology({routers[router]:'metadata flow transmit'})
-        
+
         preq_metadata = check_metadata_on_routers(self.uut_list, True)
         preq = pre.prerequisite_t(preq_metadata, self.std_wait_time)
 
         self.assert_test_case(preq, "Metadata not enabled")
-
 
     def config_class_policy_map (rtrs, class_map, policy_map, app):
         """Config class maps on the UUTs"""
@@ -147,20 +133,21 @@ class metadata_nbar (testbed_config):
         for router in rtrs:
             test_config = {
                 routers[router]:"""
-                                class-map match-all """+class_map"""
-                                   match-application """+app"""
-                                policy-map """+policy_map"""
-                                   class """+class_map"""
+                                class-map match-all """+ class_map +"""
+                                   match-application """+ app +"""
+                                policy-map """+ policy_map +"""
+                                   class """+ class_map +"""
                                 """,
                           }
 
-            result = topology.config_topology_return_rollback(test_config) 
-            self.assert_test_case(result != None, 
+            result = topology.config_topology_return_rollback(test_config)
+            self.assert_test_case(result != None,
                                   "Class/Policy Map could not be configured")
 
-    
+
     def config_service_policy (policy_map):
-        """Config Service-policy on the ingress interface of UUTs"""
+        """Config Service-policy on the egress interface of UUT1"""
+        """Config Service-policy on the ingress interface of UUT2"""
 
         print  "############################################"
         print  "#   Config service-policy input on UUTs    #"
@@ -168,12 +155,12 @@ class metadata_nbar (testbed_config):
 
         test_config = {
                     "iol2":"""
-                           interface """+ self.intf_iol2_link12"""
-                             service-policy input """+ policy_map"""
+                           interface """+ self.intf_iol2_link23 +"""
+                             service-policy input """+ policy_map +"""
                            """,
                     "iol3":"""
-                           interface """+ self.intf_iol3_link23"""
-                             service-policy input """+ policy_map""" 
+                           interface """+ self.intf_iol3_link23 +"""
+                             service-policy input """+ policy_map +""" 
                            """,
                       }
 
@@ -181,6 +168,25 @@ class metadata_nbar (testbed_config):
         self.assert_test_case(result != None,
                               "service-policy input could not be configured")
 
+
+
+###############################################################################
+#
+# 4. Define the test suite
+#
+###############################################################################
+
+class metadata_nbar_regression (testbed_config):
+    # Required config for the test suite
+    "Metadata NBAR Regression"
+
+    #wait for the Interfaces to be UP
+    required_prerequisites = pre.prerequisite_t([
+        pre.interface_up_pred_t(routers['iol-pagent1'], routers['iol-pagent1'].netifs['link_p1_i1']),
+        pre.interface_up_pred_t(routers['iol1'], routers['iol1'].netifs['link_p1_i1']),
+        pre.interface_up_pred_t(routers['iol1'], routers['iol1'].netifs['link1_2']),
+        pre.interface_up_pred_t(routers['iol2'], routers['iol2'].netifs['link1_2'])
+        ], 30)
 
 
     def test_1_metadata_nbar (self): 
@@ -200,10 +206,23 @@ class metadata_nbar (testbed_config):
        10  Unconfigure metadata related configs
        11  Repeat steps 1-10 with match application RTSP
        12  Repeat steps 1-10 with match application webex-meeting
-       13  Repeat steps 1-10 with match application telepresence-control & SIP
-       14  Repeat steps 1-10 with match application SIP & H323
+       13  Repeat steps 1-10 with match(any) application RTP
+       13  Repeat steps 1-10 with match(any) application telepresence-control & SIP
+       14  Repeat steps 1-10 with match(all) application SIP & H323
        15  Repeat steps 1-10 with match all applications
                 Initiate all traffic kinds one after another
        """
+
+
+#
+# 5. Run the test suite
+#
+
+if (__name__ == "__main__"):
+    metadata_nbar_regression_suite = metadata_nbar_regression()
+
+    # Returns an error code if there is a fatal exception or if one of the tests fails
+    rc = topology.execute_test(metadata_nbar_regression_suite);
+    sys.exit(rc)
 
 
